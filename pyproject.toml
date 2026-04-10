@@ -1,0 +1,20 @@
+[project]
+name = "b01t"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["qiskit>=1.0"]
+
+[project.scripts]
+b01t = "b01t.kit.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["b01t"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
