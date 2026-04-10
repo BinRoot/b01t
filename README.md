@@ -1,11 +1,50 @@
 # b01t: Safe Quantum Programming
 
-Memory-safe languages protect you from the dangers of `out-of-bounds access` and `null-pointer dereference`.
+Quantum code has its own class of bugs: dirty ancillae, bad uncomputation, silent decoherence. These pass type checks and compile fine in every existing framework. You only discover them by simulating the density matrix.
 
-If you're reading this, you probably already know that quantum code has its own class of villains: `unexpected measurement`, `dirty ancillae`, `decoherence`, `unintended entanglement`, `bad uncomputation`, `gate noise`, and more.
+b01t is a Python DSL that catches these at build time. Every well-typed safe program is a proven unitary channel (the Hero Theorem, machine-checked in Lean 4).
 
-b01t is Python DSL for safe quantum programming that compiles to Qiskit, where the type system enforces coherence and ancilla cleanliness.
+## Example
 
-Every well-typed safe b01t program denotes a unitary channel.
-And under standard synthesis assumptions, b01t can express any unitary quantum circuit.
+A phase oracle in six lines:
 
+```python
+from b01t import coherent, QReg, cx, z, Certification
+from b01t.kit import ancilla, compute, phase, uncompute
+
+@coherent
+def oracle(sys: QReg):
+    with ancilla(1) as anc:
+        compute(lambda: cx(sys[0], anc[0]))
+        phase(lambda: z(anc[0]))
+        uncompute()
+
+prog = oracle.build_exact(("sys", 1))
+assert prog.certification == Certification.SAFE  # proven unitary, no simulation
+```
+
+The `compute` block copies system information into the ancilla using only classical-reversible gates. The `phase` block applies a diagonal rotation. The `uncompute` auto-generates the inverse. b01t proves at build time that the ancilla returns to |0> and the whole program is a unitary channel.
+
+Now the mistake every quantum programmer makes at least once:
+
+```python
+@coherent
+def broken(sys: QReg):
+    with ancilla(1) as anc:
+        compute(lambda: h(anc[0]))  # "just put it in superposition"
+        phase(lambda: z(anc[0]))
+        uncompute()
+
+# DSLValidationError: gate 'h' is not allowed in compute blocks
+```
+
+Qiskit, Cirq, and Q# all accept this. It compiles, it runs, it looks fine. But since H is not a permutation gate, it creates superposition, which means the ancilla can end up entangled with the system after "uncomputation." The program silently becomes a mixed channel instead of a unitary.
+
+b01t rejects it: compute blocks allow only permutation gates (X, CX, CCX, MCX), phase blocks allow only diagonal gates (Z, S, T, CZ, CCZ, MCZ). If your program passes these rules, it is a unitary channel. 
+
+## Install
+
+```bash
+uv sync
+uv run pytest
+```
