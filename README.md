@@ -9,18 +9,12 @@ b01t is a Python DSL that catches these at build time. Every well-typed safe pro
 A phase oracle in six lines:
 
 ```python
-from b01t import coherent, QReg, cx, z, Certification
-from b01t.kit import ancilla, compute, phase, uncompute
-
 @coherent
 def oracle(sys: QReg):
     with ancilla(1) as anc:
         compute(lambda: cx(sys[0], anc[0]))
         phase(lambda: z(anc[0]))
         uncompute()
-
-prog = oracle.build_exact(("sys", 1))
-assert prog.certification == Certification.SAFE  # proven unitary, no simulation
 ```
 
 The `compute` block copies system information into the ancilla using only classical-reversible gates. The `phase` block applies a diagonal rotation. The `uncompute` auto-generates the inverse. b01t proves at build time that the ancilla returns to |0> and the whole program is a unitary channel.
@@ -43,6 +37,37 @@ Qiskit, Cirq, and Q# all accept this. It compiles, it runs, it looks fine. But s
 b01t rejects it: compute blocks allow only permutation gates (X, CX, CCX, MCX), phase blocks allow only diagonal gates (Z, S, T, CZ, CCZ, MCZ). If your program passes these rules, it is a unitary channel. 
 
 ## Install
+
+```bash
+pip install b01t-lang
+```
+
+## Quick Start
+
+```python
+from b01t import coherent, ancilla, compute, phase, uncompute, cx, z
+from b01t import lower_exact_program, QiskitBackend
+
+@coherent
+def oracle(sys):
+    with ancilla(1) as anc:
+        compute(lambda: cx(sys[0], anc[0]))
+        phase(lambda: z(anc[0]))
+        uncompute()
+
+prog = oracle.build_exact(("sys", 1))
+print(prog.certification)  # safe
+
+qc = QiskitBackend().emit(lower_exact_program(prog))
+print(qc)
+#                      
+#  sys:  ──■─────────■──
+#        ┌─┴─┐┌───┐┌─┴─┐
+# anc0:  ┤ X ├┤ Z ├┤ X ├
+#        └───┘└───┘└───┘
+```
+
+## Development
 
 ```bash
 uv sync

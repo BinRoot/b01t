@@ -1,7 +1,17 @@
 [project]
-name = "b01t"
+name = "b01t-lang"
 version = "0.1.0"
+description = "A Python DSL for safe quantum programming with disciplined ancilla management"
 requires-python = ">=3.11"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "Nishant Shukla"}]
+keywords = ["quantum", "quantum-computing", "qiskit", "dsl"]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
 dependencies = ["qiskit>=1.0"]
 
 [project.scripts]
