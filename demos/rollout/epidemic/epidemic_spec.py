@@ -50,7 +50,8 @@ class EpidemicSpec:
 
     @property
     def move_width(self) -> int:
-        return max(1, math.ceil(math.log2(self.n_cells))) if self.n_cells > 1 else 1
+        # Width accommodates the sentinel N for out-of-range ranks.
+        return max(1, math.ceil(math.log2(self.n_cells + 1)))
 
     def selector_width(self, choices: int) -> int:
         if choices <= 1:

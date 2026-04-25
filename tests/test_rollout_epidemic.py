@@ -104,8 +104,8 @@ class TestEpidemicCosts:
         oracle = make_epidemic_rollout_oracle(spec)
         prog, qc = _compile(oracle, spec)
         assert prog.certification == Certification.SAFE
-        assert qc.num_qubits == 44
-        assert qc.size() == 1309
+        assert qc.num_qubits == 46
+        assert qc.size() == 1343
 
     def test_3x3_h1(self):
         spec = EpidemicSpec()  # 3x3, center infected, T=2
@@ -113,7 +113,7 @@ class TestEpidemicCosts:
         prog, qc = _compile(oracle, spec)
         assert prog.certification == Certification.SAFE
         assert qc.num_qubits == 91
-        assert qc.size() == 4138
+        assert qc.size() == 4178
 
     def test_3x3_h2(self):
         spec = EpidemicSpec(horizon=2)  # 3x3, center infected, T=2, H=2
@@ -121,7 +121,7 @@ class TestEpidemicCosts:
         prog, qc = _compile(oracle, spec)
         assert prog.certification == Certification.SAFE
         assert qc.num_qubits == 146
-        assert qc.size() == 8480
+        assert qc.size() == 8560
 
     def test_5x5_h1(self):
         spec = EpidemicSpec(rows=5, cols=5, horizon=1, threshold=1,
@@ -130,4 +130,4 @@ class TestEpidemicCosts:
         prog, qc = _compile(oracle, spec)
         assert prog.certification == Certification.SAFE
         assert qc.num_qubits == 227
-        assert qc.size() == 15250
+        assert qc.size() == 15322

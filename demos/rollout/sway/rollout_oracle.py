@@ -9,8 +9,16 @@ from .sway_transition import make_sway_transition
 from .terminal_eval import make_terminal_eval
 
 
-def make_rollout_oracle(spec: SwaySpec):
-    """Create a @coherent rollout oracle for the given spec."""
+def make_rollout_oracle(spec: SwaySpec, prepare_superpositions: bool = True):
+    """Create a @coherent rollout oracle for the given spec.
+
+    prepare_superpositions: when True (default), the oracle is the full
+    unitary U_O of the paper, with selector and dice registers prepared
+    in uniform superposition. When False, the H-prep is omitted and the
+    circuit is a pure permutation on basis states; selector and dice
+    values must be supplied as classical input bits. Used by the
+    Monte-Carlo and branch-agreement harnesses to sample one branch.
+    """
     sway = make_sway_transition(spec)
     term = make_terminal_eval(spec)
     n = spec.n_cells
@@ -51,13 +59,14 @@ def make_rollout_oracle(spec: SwaySpec):
         payoff = regs[idx]; idx += 1
 
         # Prepare superpositions
-        for round_h in range(H):
-            for w in sels_b[round_h]:
-                h(w)
-            for w in sels_w[round_h]:
-                h(w)
-            for w in dice_regs[round_h]:
-                h(w)
+        if prepare_superpositions:
+            for round_h in range(H):
+                for w in sels_b[round_h]:
+                    h(w)
+                for w in sels_w[round_h]:
+                    h(w)
+                for w in dice_regs[round_h]:
+                    h(w)
 
         # Main loop: H rounds
         for round_h in range(H):

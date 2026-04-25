@@ -19,8 +19,15 @@ from .sir_transition import make_sir_transition
 from .terminal_eval import make_epidemic_terminal_eval
 
 
-def make_epidemic_rollout_oracle(spec: EpidemicSpec):
-    """Create a @coherent rollout oracle for the epidemic model."""
+def make_epidemic_rollout_oracle(spec: EpidemicSpec, prepare_superpositions: bool = True):
+    """Create a @coherent rollout oracle for the epidemic model.
+
+    prepare_superpositions: when True (default), the oracle is the full
+    unitary U_O of the paper, with selector and dice registers prepared
+    in uniform superposition. When False, the H-prep is omitted and the
+    circuit is a pure permutation on basis states; selector and dice
+    values must be supplied as classical input bits.
+    """
     sir = make_sir_transition(spec)
     term = make_epidemic_terminal_eval(spec)
     n = spec.n_cells
@@ -66,12 +73,13 @@ def make_epidemic_rollout_oracle(spec: EpidemicSpec):
         payoff = regs[idx]; idx += 1
 
         # ── Prepare superpositions ──
-        for h_round in range(H):
-            if sel_regs[h_round] is not None:
-                for w in sel_regs[h_round]:
+        if prepare_superpositions:
+            for h_round in range(H):
+                if sel_regs[h_round] is not None:
+                    for w in sel_regs[h_round]:
+                        h(w)
+                for w in dice_regs[h_round]:
                     h(w)
-            for w in dice_regs[h_round]:
-                h(w)
 
         # ── Main loop ──
         for h_round in range(H):

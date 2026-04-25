@@ -1,9 +1,6 @@
 """Tests for the Sway rollout oracle and its sub-components.
 
-The concrete qubit/gate counts match the b01t compiled oracle.
-The paper (Table 1) reports Qiskit-reference counts which differ
-slightly because the b01t binary rank-select variant and ancilla
-coalescing produce a different decomposition.
+Qubit counts here match paper Tables 1 and 2; b01t is the source of truth.
 """
 from b01t import (
     PackageMeta,
@@ -92,8 +89,8 @@ class TestSwayCosts:
         oracle = make_rollout_oracle(spec)
         prog, qc = _compile(oracle, spec)
         assert prog.certification == Certification.SAFE
-        assert qc.num_qubits == 49
-        assert qc.size() == 1855
+        assert qc.num_qubits == 51
+        assert qc.size() == 1895
 
     def test_3x3_h1(self):
         spec = SwaySpec(rows=3, cols=3, horizon=1)
@@ -101,7 +98,7 @@ class TestSwayCosts:
         prog, qc = _compile(oracle, spec)
         assert prog.certification == Certification.SAFE
         assert qc.num_qubits == 101
-        assert qc.size() == 5502
+        assert qc.size() == 5542
 
     def test_3x3_h2(self):
         spec = SwaySpec(rows=3, cols=3, horizon=2)
@@ -109,7 +106,7 @@ class TestSwayCosts:
         prog, qc = _compile(oracle, spec)
         assert prog.certification == Certification.SAFE
         assert qc.num_qubits == 169
-        assert qc.size() == 9688
+        assert qc.size() == 9768
 
     def test_5x5_h1(self):
         spec = SwaySpec(rows=5, cols=5, horizon=1)
@@ -117,7 +114,7 @@ class TestSwayCosts:
         prog, qc = _compile(oracle, spec)
         assert prog.certification == Certification.SAFE
         assert qc.num_qubits == 237
-        assert qc.size() == 22193
+        assert qc.size() == 22265
 
 
 class TestRolloutOracle5x5:

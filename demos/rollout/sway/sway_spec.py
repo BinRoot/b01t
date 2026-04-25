@@ -75,8 +75,9 @@ class SwaySpec:
         for i in range(h + 1):
             specs.append((f"color_{i}", n))
 
-        # Move registers (binary-encoded cell index, one per placement)
-        move_w = max(1, math.ceil(math.log2(n))) if n > 1 else 1
+        # Move registers (binary-encoded cell index, one per placement;
+        # width accommodates the sentinel N for out-of-range ranks)
+        move_w = max(1, math.ceil(math.log2(n + 1)))
         for r in range(1, h + 1):
             specs.append((f"move_b{r}", move_w))
             specs.append((f"move_w{r}", move_w))

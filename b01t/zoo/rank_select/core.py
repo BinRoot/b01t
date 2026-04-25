@@ -2,8 +2,10 @@
 
 Two output encodings:
 
-  rank_select():        one-hot output (N qubits), O(1) per-cell application
-  rank_select_binary(): binary output (ceil(log2(N)) qubits), O(N) application
+  rank_select():        one-hot output (N qubits), O(1) per-cell application;
+                        sentinel (no valid action) is the all-zero vector.
+  rank_select_binary(): binary output (ceil(log2(N+1)) qubits), O(N)
+                        application; sentinel is the binary encoding of N.
 
 Both are @coherent with internal ancilla management.
 """
@@ -70,16 +72,24 @@ def rank_select_binary_scan(
     eq_wires: list[Wire],
     n_cells: int,
 ) -> None:
-    """Forward/reverse scan that writes matching cell index to idx_wires.
+    """Forward/reverse scan that writes matching cell index to idx_wires,
+    or the sentinel value ``n_cells`` when no cell matches.
 
-    For each cell: check if empty AND prefix==selector → flag,
-    write cell index to idx conditioned on flag, unset flag,
-    increment prefix. Then reverse scan to clean prefix.
+    Pre-loads idx to binary(n_cells); on a match at cell c, XORs with
+    (c XOR n_cells) so idx ends at binary(c). With no match, idx keeps
+    its pre-loaded sentinel value.
 
-    After completion: flag=0, pre=0, eq=0, idx=cell_index_of_match.
+    After completion: flag=0, pre=0, eq=0, idx=cell_index_of_match
+    (or ``n_cells`` if no valid cell exists at the requested rank).
     """
     w = len(pre_wires)
     idx_w = len(idx_wires)
+    sentinel_bits = int_to_bits(n_cells, idx_w)
+
+    # Preload sentinel into idx.
+    for bit in range(idx_w):
+        if sentinel_bits[bit]:
+            x(idx_wires[bit])
 
     for cell in range(n_cells):
         x(occ_wires[cell])
@@ -92,10 +102,10 @@ def rank_select_binary_scan(
         # All-1 check → flag
         all_controls = [occ_wires[cell]] + eq_wires
         apply_pattern_x_wires(all_controls, [1] * len(all_controls), flag_wire)
-        # Write cell index to idx, conditioned on flag
+        # Rewrite idx from sentinel to cell index when flagged.
         cell_bits = int_to_bits(cell, idx_w)
         for bit in range(idx_w):
-            if cell_bits[bit]:
+            if cell_bits[bit] != sentinel_bits[bit]:
                 cx(flag_wire, idx_wires[bit])
         # Unset flag
         apply_pattern_x_wires(all_controls, [1] * len(all_controls), flag_wire)
@@ -125,20 +135,26 @@ def rank_select_binary(
     """Coherent rank-select with binary-encoded output.
 
     Selects the selector-th empty cell and writes its cell index
-    (binary-encoded) to the target register. Uses fewer qubits than
-    the one-hot variant: target is ceil(log2(N)) bits instead of N.
+    (binary-encoded) to the target register. For out-of-range ranks
+    the target receives the sentinel value ``N = len(occ)``; downstream
+    circuits treat this as a designated no-op branch.
 
-    Trade-off: application requires O(N) pattern-matched MCX gates
-    to decode the binary index at each cell.
+    Target width must be at least ``ceil(log2(N+1))`` bits to
+    represent the sentinel.
 
     Args:
         occ: occupancy register (which cells are occupied)
         selector: which empty cell to select (rank index)
-        target: output register (binary cell index, ceil(log2(N)) bits)
+        target: output register (binary cell index, width
+            ``ceil(log2(N+1))`` or more)
     """
     n = len(occ)
     w = len(selector)
     idx_w = len(target)
+    required_w = max(1, ceil(log2(n + 1)))
+    assert idx_w >= required_w, (
+        f"rank_select_binary: target width {idx_w} too small for "
+        f"sentinel N={n}; need at least {required_w}")
 
     # Ancilla: 1 flag + w prefix + w eq + idx_w idx
     with ancilla(1 + w + w + idx_w) as scratch:
