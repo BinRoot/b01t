@@ -73,3 +73,9 @@ print(qc)
 uv sync
 uv run pytest
 ```
+
+## Demos
+
+- `demos/rollout/` - coherent rollout oracle for sequential decision making (Sway and SIR-epidemic instances), a bench driver that prints validation and scaling tables, and Lean 4 proofs of the construction's theorems under `demos/rollout/RolloutProofs/`.
+- `demos/best_arm/` - end-to-end pipeline: rollout oracle → coherent AE → Dürr–Høyer max-finding.
+- `demos/{shor,grover_search,bernstein_vazirani,deutsch,simon}/` - textbook quantum algorithms.

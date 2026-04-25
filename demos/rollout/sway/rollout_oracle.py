@@ -12,12 +12,12 @@ from .terminal_eval import make_terminal_eval
 def make_rollout_oracle(spec: SwaySpec, prepare_superpositions: bool = True):
     """Create a @coherent rollout oracle for the given spec.
 
-    prepare_superpositions: when True (default), the oracle is the full
-    unitary U_O of the paper, with selector and dice registers prepared
-    in uniform superposition. When False, the H-prep is omitted and the
-    circuit is a pure permutation on basis states; selector and dice
-    values must be supplied as classical input bits. Used by the
-    Monte-Carlo and branch-agreement harnesses to sample one branch.
+    prepare_superpositions: when True (default), selector and dice
+    registers are prepared in uniform superposition (the full coherent
+    oracle). When False, the H-prep is omitted and the circuit is a
+    pure permutation on basis states; selector and dice values must be
+    supplied as classical input bits. Used by the Monte-Carlo and
+    branch-agreement harnesses to sample one branch.
     """
     sway = make_sway_transition(spec)
     term = make_terminal_eval(spec)

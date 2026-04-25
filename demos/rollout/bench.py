@@ -1,13 +1,19 @@
-"""Reproduce paper Tables 1 (validation) and 2 (scaling) from b01t.
+"""Validation and scaling tables for the rollout oracle.
 
-Compiles each instance through the b01t pipeline, gathers Qiskit
-qubit/depth/gate counts, runs the verification harness for the small
-instances, and prints projected resource costs for the larger ones.
+Compiles each instance, gathers Qiskit qubit/depth/gate counts, runs
+the verification harness for the small instances, and prints
+resource counts at the larger scales.
 
 Run:
     uv run python -m demos.rollout.bench
     uv run python -m demos.rollout.bench --validate-only
     uv run python -m demos.rollout.bench --scale-only
+
+Runtime (single 24-core x86_64, 2026-04):
+    --scale-only     ≈ 30 s (compilation only)
+    --validate-only  ≈ 10 min (256 sampled branches + 1000 MC samples
+                     + classical exact-value DP per Table 1 row;
+                     Sway 5x5 H=3 exact-value DP is the bottleneck)
 """
 from __future__ import annotations
 
@@ -83,7 +89,7 @@ def _validate_epi(rows: int, cols: int, horizon: int, threshold: int,
     metrics = _compile_metrics(spec, make_epidemic_rollout_oracle)
     matches, total = verify_epi_branches(spec, samples=branch_samples, seed=seed_branch)
     mc, se = mc_epi_payoff(spec, samples=mc_samples, seed=seed_mc)
-    exact_str = f"{classical_epidemic_payoff_exact(spec):.3f}" if do_exact else "—"
+    exact_str = f"{classical_epidemic_payoff_exact(spec):.3f}" if do_exact else "-"
     elapsed = time.time() - t0
     print(f"Epi.   {rows}x{cols} H={horizon} T={threshold}: "
           f"q={metrics.qubits:>5} d={metrics.depth:>6} g={metrics.gates:>7}  "
@@ -111,6 +117,9 @@ def _scale_epi(rows: int, cols: int, horizon: int, threshold: int) -> CircuitMet
 def run_scaling() -> None:
     print("\n=== Table 2: scaling (qubits / gates) ===")
     print(f"{'m':>3} {'H':>3} {'N':>4}   {'Sway q':>6} {'Epi q':>6}   {'Sway g':>9} {'Epi g':>9}")
+    # Epidemic threshold T scales with grid size: payoff = 1 iff final
+    # infected count <= T. Setting T = N/5 keeps the success criterion
+    # comparable across scales (clamped at 1 for the smallest grid).
     rows = [(5, 5, 25), (7, 5, 49), (10, 5, 100), (10, 10, 100)]
     for m, h, n in rows:
         sw = _scale_sway(m, m, h)
@@ -119,7 +128,7 @@ def run_scaling() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Reproduce paper Tables 1 & 2 from b01t.")
+    parser = argparse.ArgumentParser(description="Print validation and scaling tables for the rollout oracle.")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--scale-only", action="store_true")
     parser.add_argument("--branch-samples", type=int, default=256)

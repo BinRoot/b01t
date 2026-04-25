@@ -14,7 +14,7 @@ from typing import DefaultDict, Dict, List, Sequence, Tuple
 from .sway_spec import SwaySpec
 
 Board = Tuple[Tuple[int, ...], Tuple[int, ...]]
-DICE_RANGE = 20  # threshold (4-k)/20 matches the paper's classical baseline
+DICE_RANGE = 20  # flip probability is (4-k)/20 for k friendly neighbors
 
 
 @dataclass(frozen=True)
