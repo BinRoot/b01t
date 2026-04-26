@@ -361,16 +361,20 @@ theorem algorithmic_canonicity {N W₁ W₂ : Nat}
 /-! ## 9. Unconditional Ω(N) Gate Lower Bound
 
 For ANY bounded-fan-in circuit computing select (not just sequential-scan),
-the output depends on N-1 input bits. Each gate adds at most k-1 wires
-to the backward light cone. So the circuit needs ≥ (N-1-m)/(k-1) gates,
+the output depends on every input mask bit (formalized as
+`RankSelectCommunication.rankSelect_depends_on_every_bit` via the
+singleton-mask argument). Each gate adds at most k wires to the
+backward light cone, so the circuit needs ≥ (N - m)/k gates,
 where m is the output width. This is unconditional. -/
 
 /-- Backward light cone argument: if n_relevant input bits influence
     m output bits through a circuit of G gates with fan-in k, then
-    m + (k-1)·G ≥ n_relevant, so G ≥ (n_relevant - m)/(k-1).
+    m + k·G ≥ n_relevant, so G ≥ (n_relevant - m)/k.
 
-    For select: n_relevant = N-1, m = ⌈log₂ N⌉, k = 3 (Toffoli),
-    giving G = Ω(N). -/
+    For rank-select, the input-dependence count is `n_relevant = N`
+    (every mask bit is depended on, witnessed by
+    `RankSelectCommunication.rankSelect_depends_on_every_bit`).
+    With m = ⌈log₂(N+1)⌉ and constant k, this gives G = Ω(N). -/
 theorem unconditional_gate_lower_bound
     (n_relevant m G k : Nat) (_hk : 1 ≤ k)
     (h_cone : n_relevant ≤ m + k * G) :
@@ -384,12 +388,14 @@ theorem gate_count_from_cone
     n_relevant - m ≤ k * G := by
   omega
 
-/-- For select: N-1 input bits are relevant, m output bits, fan-in k.
-    Gives k·G ≥ N - 1 - m, i.e. G = Ω(N/k) = Ω(N) for constant k. -/
+/-- For rank-select: every input mask bit is depended on (proved
+    formally as `rankSelect_depends_on_every_bit`), so
+    `n_relevant = N`. With m output bits and fan-in k, the cone bound
+    gives k·G ≥ N - m, i.e. G = Ω(N/k) = Ω(N) for constant k. -/
 theorem select_gate_lower_bound
     (N m G k : Nat)
-    (h_cone : N - 1 ≤ m + k * G) :
-    N - 1 - m ≤ k * G := by
+    (h_cone : N ≤ m + k * G) :
+    N - m ≤ k * G := by
   omega
 
 /-! ## 10. Rank-Witness Emergence

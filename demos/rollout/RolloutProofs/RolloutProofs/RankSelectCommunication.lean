@@ -471,6 +471,82 @@ theorem workspace_per_cut_bound
   have := Fintype.card_le_of_injective _ hinj
   simpa [Fintype.card_fin] using this
 
+/-! ## 9. Per-Bit Input Dependence
+
+Establishes that every input mask bit is depended on by `rankSelect`,
+in the standard input-dependence sense: for each input position `p`,
+there exist two masks differing only at `p` whose `rankSelect` outputs
+at rank 0 differ. This is the formal justification for the
+`N ≤ m + κ G` cone hypothesis used by `select_gate_lower_bound` in
+`RankSelectUniversality.lean` to derive the unconditional `Ω(N)` gate
+lower bound. -/
+
+/-- The singleton mask: only position `p` is true. -/
+def singletonMask {N : Nat} (p : Fin N) : Mask N :=
+  fun i => decide (i = p)
+
+@[simp] lemma singletonMask_self {N : Nat} (p : Fin N) :
+    singletonMask p p = true := by
+  unfold singletonMask; simp
+
+@[simp] lemma singletonMask_other {N : Nat} (p i : Fin N) (h : i ≠ p) :
+    singletonMask p i = false := by
+  unfold singletonMask
+  simp [h]
+
+/-- The all-false mask. -/
+def zeroMask (N : Nat) : Mask N := fun _ => false
+
+@[simp] lemma zeroMask_apply {N : Nat} (i : Fin N) :
+    zeroMask N i = false := rfl
+
+/-- `prefixCount` of a singleton mask at threshold `p.val` is 0:
+    the only true bit lies at `p`, with no true bit at any earlier position. -/
+lemma prefixCount_singletonMask_self {N : Nat} (p : Fin N) :
+    prefixCount (singletonMask p) p.val = 0 := by
+  unfold prefixCount
+  rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  rintro i _ ⟨hlt, hone⟩
+  unfold singletonMask at hone
+  rw [decide_eq_true_eq] at hone
+  subst hone
+  exact Nat.lt_irrefl _ hlt
+
+/-- `rankSelect` at rank 0 on the singleton mask `e_p` returns `p`. -/
+theorem rankSelect_singletonMask_zero {N : Nat} (p : Fin N) :
+    rankSelect (singletonMask p) 0 = p.val :=
+  rankSelect_spec (singletonMask p) 0 p
+    (singletonMask_self p) (prefixCount_singletonMask_self p)
+
+/-- `rankSelect` at rank 0 on the all-false mask returns the sentinel `N`. -/
+theorem rankSelect_zeroMask {N : Nat} :
+    rankSelect (zeroMask N) 0 = N := by
+  have h : ¬ ∃ j : Fin N, zeroMask N j = true ∧
+      prefixCount (zeroMask N) j.val = 0 := by
+    rintro ⟨j, hone, _⟩
+    simp [zeroMask] at hone
+  unfold rankSelect
+  rw [dif_neg h]
+
+/-- **Per-bit input dependence.** For each input position `p < N`,
+    there exist two masks differing only at position `p` whose
+    rank-select outputs at rank 0 differ.
+
+    The witnesses are the all-false mask (output `N`) and the
+    singleton mask `e_p` (output `p`). They differ exactly at `p`.
+    Together with the backward-light-cone bound (Ω(N) ≤ w + κG, which
+    is a generic property of fan-in-κ reversible circuits), this
+    gives the unconditional `Ω(N)` gate lower bound. -/
+theorem rankSelect_depends_on_every_bit {N : Nat} (p : Fin N) :
+    ∃ M₀ M₁ : Mask N,
+      (∀ i : Fin N, i ≠ p → M₀ i = M₁ i) ∧
+      rankSelect M₀ 0 ≠ rankSelect M₁ 0 := by
+  refine ⟨zeroMask N, singletonMask p, ?_, ?_⟩
+  · intro i hi
+    rw [zeroMask_apply, singletonMask_other p i hi]
+  · rw [rankSelect_zeroMask, rankSelect_singletonMask_zero]
+    exact (Nat.ne_of_lt p.isLt).symm
+
 /-! ## 8. Summary
 
 ### Three-tier hierarchy (proof.md)
