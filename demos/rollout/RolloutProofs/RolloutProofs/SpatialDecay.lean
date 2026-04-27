@@ -314,4 +314,77 @@ theorem subcritical_branching :
 theorem saw_branching_subcritical :
     3 * p_edge < 1 := by unfold p_edge; norm_num
 
+-- ════════════════════════════════════════════════════════════════
+-- § 7: General-Parameter Influence Decay
+-- ════════════════════════════════════════════════════════════════
+
+/-! ### General-`κ` form of the spatial-decay theorem.
+
+The Sway-specific `influenceBound` above hard-codes `κ = 4` (grid
+degree) and `p = 1/20` (per-edge probability). This section
+reformulates the bound for arbitrary degree-`κ` graphs and per-edge
+probability `p`, matching paper Theorem `thm:decay`. The
+path-counting step of that theorem (left as a sketch in the paper)
+becomes `walkCount_le_pow_kappa` here. -/
+
+/-- Number of length-`d` walks from `v` in a structure where every
+    vertex has at most `κ` outgoing neighbors. Defined recursively:
+    a length-`(n+1)` walk from `v` is a length-`n` walk from a
+    neighbor of `v`. -/
+def walkCount {V : Type*} [DecidableEq V] [Fintype V]
+    (neighbors : V → Finset V) : V → ℕ → ℕ
+  | _, 0 => 1
+  | v, n + 1 => ∑ u ∈ neighbors v, walkCount neighbors u n
+
+/-- **Walk-count bound.** In a structure with max degree `κ`, the
+    number of length-`d` walks from any fixed vertex is at most `κ^d`.
+    This is the path-counting step that paper Theorem `thm:decay`
+    sketches but does not formalize. -/
+theorem walkCount_le_pow_kappa {V : Type*} [DecidableEq V] [Fintype V]
+    (neighbors : V → Finset V) (κ : ℕ)
+    (hd : ∀ v : V, (neighbors v).card ≤ κ)
+    (v : V) (d : ℕ) :
+    walkCount neighbors v d ≤ κ ^ d := by
+  induction d generalizing v with
+  | zero => simp [walkCount]
+  | succ d' ih =>
+    change ∑ u ∈ neighbors v, walkCount neighbors u d' ≤ κ ^ (d' + 1)
+    calc ∑ u ∈ neighbors v, walkCount neighbors u d'
+        ≤ ∑ u ∈ neighbors v, κ ^ d' :=
+          Finset.sum_le_sum (fun u _ => ih u)
+      _ = (neighbors v).card * κ ^ d' := by
+          rw [Finset.sum_const, smul_eq_mul]
+      _ ≤ κ * κ ^ d' := Nat.mul_le_mul_right _ (hd v)
+      _ = κ ^ (d' + 1) := by rw [pow_succ]; ring
+
+/-- General influence bound parametrized by graph degree `κ` and
+    per-edge per-round probability `p`:
+    `∑_{ℓ=d}^{H} κ^ℓ · C(H,ℓ) · p^ℓ`.
+
+    Combines the walk-count bound `κ^ℓ` (`walkCount_le_pow_kappa`) with
+    the per-path multi-round probability `C(H,ℓ) · p^ℓ` from the
+    sketch of paper Theorem `thm:decay`. -/
+def generalInfluenceBound (κ : ℕ) (p : ℝ) (H d : ℕ) : ℝ :=
+  ∑ i ∈ Finset.range (H - d + 1),
+    (κ : ℝ) ^ (d + i) * (Nat.choose H (d + i) : ℝ) * p ^ (d + i)
+
+/-- Non-negativity. -/
+theorem generalInfluenceBound_nonneg (κ : ℕ) {p : ℝ} (hp : 0 ≤ p) (H d : ℕ) :
+    0 ≤ generalInfluenceBound κ p H d := by
+  unfold generalInfluenceBound
+  apply Finset.sum_nonneg
+  intro i _
+  refine mul_nonneg (mul_nonneg ?_ (Nat.cast_nonneg _)) (pow_nonneg hp _)
+  exact pow_nonneg (Nat.cast_nonneg _) _
+
+/-- For `d > H`, no length-`d` propagation can occur in `H` rounds, so
+    the bound is zero. -/
+theorem generalInfluenceBound_zero_beyond
+    (κ : ℕ) (p : ℝ) (H d : ℕ) (hd : H < d) :
+    generalInfluenceBound κ p H d = 0 := by
+  unfold generalInfluenceBound
+  have hsub : H - d = 0 := Nat.sub_eq_zero_of_le (le_of_lt hd)
+  rw [hsub]
+  simp [Nat.choose_eq_zero_of_lt hd]
+
 end SpatialDecay

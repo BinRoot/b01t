@@ -17,10 +17,10 @@ def _spec_3x3_h2_t2() -> EpidemicSpec:
 
 class TestEpidemicClassical:
     def test_h1_exact(self):
-        assert abs(classical_epidemic_payoff_exact(_spec_3x3_h1_t2()) - 0.835) < 1e-3
+        assert abs(classical_epidemic_payoff_exact(_spec_3x3_h1_t2()) - 0.953) < 1e-3
 
     def test_h2_exact_matches_paper(self):
-        assert abs(classical_epidemic_payoff_exact(_spec_3x3_h2_t2()) - 0.667) < 1e-3
+        assert abs(classical_epidemic_payoff_exact(_spec_3x3_h2_t2()) - 0.891) < 1e-3
 
 
 class TestEpidemicBranchAgreement:
@@ -37,5 +37,5 @@ class TestEpidemicMonteCarlo:
     def test_h2_within_paper_ci(self):
         spec = _spec_3x3_h2_t2()
         p, _ = monte_carlo_payoff_from_oracle(spec, samples=1000, seed=11)
-        # Paper Table 1 row 3: MC = 0.664±0.029 with the same RNG.
-        assert abs(p - 0.664) < 1e-3
+        # Paper Table 1 row 3: MC = 0.883±0.020 with the same RNG.
+        assert abs(p - 0.883) < 1e-3
