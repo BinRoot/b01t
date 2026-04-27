@@ -7,4 +7,10 @@ Implements coherent rank-select (QCE26, Section 4.1):
 where j_s(r) is the r-th valid cell under validity mask s.
 All ancillae are fully uncomputed.
 """
-from .core import rank_select, rank_select_scan, rank_select_binary, rank_select_binary_scan
+from .core import (
+    rank_select,
+    rank_select_scan,
+    rank_select_binary,
+    rank_select_binary_scan,
+    rank_select_binary_blocked,
+)

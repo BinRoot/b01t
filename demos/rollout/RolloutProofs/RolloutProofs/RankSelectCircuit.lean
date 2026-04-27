@@ -252,7 +252,100 @@ theorem rankSelectCircuit_bits_lower_bound {N : Nat}
     Nat.log_mono_right h_bound
   rwa [Nat.log_pow (by norm_num : 1 < 2)] at h_mono
 
-/-! ## 8. Summary
+/-! ## 8. Fan-In Crossing-Gate Decomposition
+
+A fan-in-`κ` crossing gate touches at most `κ` wires total, split as
+`a` wires on Alice's side and `b` wires on Bob's side with `a + b ≤ κ`.
+Standard decomposition into single-bit cross moves: Alice sends her
+`a` bits to Bob (`a` `crossAB` moves), Bob applies the gate locally,
+then Bob returns Alice's `a` updated bits (`a` `crossBA` moves).
+Total cross moves per gate: `2 * a ≤ 2 * κ`.
+
+`FanInGate α β κ` packages a move list with a proof
+`crossBits moves ≤ 2 * κ`, certifying that one fan-in-`κ` gate has
+been validly decomposed. A `FanInCircuit` is a list of such gates.
+The theorem `expand_crossBits_le` shows the expansion yields at most
+`2 * κ * G` cross moves, formalizing the fan-in accounting
+`bits ≤ 2κ · (crossing gates)` that `CircuitWithCuts.bits_le`
+(in `RankSelectGateLowerBound.lean`) takes as a structure field.
+-/
+
+/-- Append-additivity of `crossBits`. -/
+@[simp] lemma crossBits_append {α β : Type*}
+    (xs ys : List (Move α β)) :
+    crossBits (xs ++ ys) = crossBits xs + crossBits ys := by
+  induction xs with
+  | nil => simp [crossBits]
+  | cons m rest ih =>
+    cases m with
+    | aliceStep _ =>
+        change crossBits (rest ++ ys) = crossBits rest + crossBits ys
+        exact ih
+    | bobStep _ =>
+        change crossBits (rest ++ ys) = crossBits rest + crossBits ys
+        exact ih
+    | crossAB _ _ _ =>
+        change crossBits (rest ++ ys) + 1 = crossBits rest + 1 + crossBits ys
+        omega
+    | crossBA _ _ _ =>
+        change crossBits (rest ++ ys) + 1 = crossBits rest + 1 + crossBits ys
+        omega
+
+/-- One fan-in-`κ` crossing gate, certified to decompose into at most
+    `2 * κ` single-bit cross moves. The `moves` list is the
+    decomposition; `bits_bound` is the per-gate cost certificate. -/
+structure FanInGate (α β : Type*) (κ : Nat) where
+  moves : List (Move α β)
+  bits_bound : crossBits moves ≤ 2 * κ
+
+/-- A circuit assembled from fan-in-`κ` gates, run in order. -/
+abbrev FanInCircuit (α β : Type*) (κ : Nat) : Type _ :=
+  List (FanInGate α β κ)
+
+namespace FanInCircuit
+
+variable {α β : Type*} {κ : Nat}
+
+/-- Concatenate every gate's decomposition in order. -/
+def expand : FanInCircuit α β κ → List (Move α β)
+  | [] => []
+  | g :: rest => g.moves ++ expand rest
+
+/-- **Fan-in accounting at the move-list level.** A circuit of `G`
+    fan-in-`κ` crossing gates expands to a move list with at most
+    `2 * κ * G` single-bit cross moves. -/
+theorem expand_crossBits_le (C : FanInCircuit α β κ) :
+    crossBits C.expand ≤ 2 * κ * C.length := by
+  induction C with
+  | nil => simp [expand, crossBits]
+  | cons g rest ih =>
+    change crossBits (g.moves ++ expand rest) ≤ 2 * κ * (rest.length + 1)
+    rw [crossBits_append]
+    calc crossBits g.moves + crossBits (expand rest)
+        ≤ 2 * κ + 2 * κ * rest.length := Nat.add_le_add g.bits_bound ih
+      _ = 2 * κ * (rest.length + 1) := by ring
+
+end FanInCircuit
+
+/-- **Constructive form of Corollary~3 (Crossing-gate bound).**
+    If a `RankSelectCircuit` has its move list equal to the expansion
+    of a fan-in-`κ` `FanInCircuit` of `G` gates, then
+    `log₂ min(t, N - t) ≤ 2 * κ * G`. Combined with
+    `rankSelectCircuit_bits_lower_bound`, this discharges the
+    `bits_le` field of `CircuitWithCuts` constructively. -/
+theorem rankSelectCircuit_fanIn_gates_bound {N κ : Nat}
+    (RC : RankSelectCircuit N) (C : FanInCircuit RC.α RC.β κ)
+    (h : RC.circuit.moves = C.expand) :
+    Nat.log 2 (min RC.t (N - RC.t)) ≤ 2 * κ * C.length := by
+  have h_bits : Nat.log 2 (min RC.t (N - RC.t)) ≤ RC.circuit.bits :=
+    rankSelectCircuit_bits_lower_bound RC
+  have h_eq : RC.circuit.bits = crossBits C.expand := by
+    unfold PartCircuit.bits
+    rw [h]
+  rw [h_eq] at h_bits
+  exact le_trans h_bits (FanInCircuit.expand_crossBits_le C)
+
+/-! ## 9. Summary
 
 ### What this file establishes (third tier of the hierarchy)
 
@@ -267,14 +360,12 @@ theorem rankSelectCircuit_bits_lower_bound {N : Nat}
 - `toRSP`: induces a `RankSelectProto`, `toRSP_correct` verifies it.
 - `rankSelectCircuit_bits_bound`: `min(t, N - t) ≤ 2^bits`.
 - `rankSelectCircuit_bits_lower_bound`: `log₂ min(t, N - t) ≤ bits`.
-
-### Fan-in accounting (informal)
-
-A fan-in-`κ` crossing gate decomposes to `≤ 2κ` single-bit moves:
-Alice sends her `≤ κ` bits one by one, Bob applies the gate, Bob sends
-`≤ κ` bits back. Thus any circuit with `G` fan-in-`κ` crossing gates
-has `bits ≤ 2κG`, giving `G ≥ (log₂ min(t, N - t)) / (2κ)`.
-The decomposition is mechanical and not formalized here.
+- `FanInGate` / `FanInCircuit` / `expand_crossBits_le`: every
+  fan-in-`κ` circuit of `G` gates expands to at most `2 * κ * G`
+  cross bits, formalizing the per-gate accounting.
+- `rankSelectCircuit_fanIn_gates_bound`: combining with the cut
+  bound gives `log₂ min(t, N - t) ≤ 2 * κ * G`, the constructive
+  form of the paper's Crossing-gate bound corollary.
 
 ### Three tiers
 

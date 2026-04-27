@@ -19,8 +19,8 @@ class EpidemicSpec:
     threshold: int = 2
     initial_infected: Tuple[int, ...] = (4,)  # center of 3x3
     die_sides: int = 8
-    beta_num: int = 1   # beta = 1/4
-    beta_den: int = 4
+    beta_num: int = 1   # beta = 1/8 (subcritical: kappa*p = 4*1/8 = 1/2 < 1)
+    beta_den: int = 8
     gamma_num: int = 1  # gamma = 1/4
     gamma_den: int = 4
 

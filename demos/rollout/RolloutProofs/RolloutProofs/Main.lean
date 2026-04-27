@@ -14,6 +14,7 @@ import RolloutProofs.TemplateBridge
 import RolloutProofs.ApproximateBridge
 import RolloutProofs.RankSelectCircuit
 import RolloutProofs.RankSelectGateLowerBound
+import RolloutProofs.RankSelectBlocked
 
 /-!
 # Summary
