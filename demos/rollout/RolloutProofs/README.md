@@ -1,10 +1,10 @@
 # Rollout Oracle - Lean 4 Proofs
 
 Machine-checked proofs for the rank-select primitive, rollout oracle
-cost formulas, classical lower bound, lifting theorem, and quantum
-upper bound used by the rollout-oracle construction. Sits next to the
-Python implementation at `../sway/`, `../epidemic/`, with the bench
-driver at `../bench.py`.
+cost formulas, classical lower bound, lifting and per-configuration
+transfer theorems, and quantum upper bound used by the rollout-oracle
+construction. Sits next to the Python implementation at `../sway/`,
+`../epidemic/`, with the bench driver at `../bench.py`.
 
 ## Build
 
@@ -18,21 +18,26 @@ Toolchain: `lean4 v4.28.0`, `mathlib4 v4.28.0`. Pinned in
 
 ## Result-to-module map
 
-Module names are bare Lean modules under `RolloutProofs/`.
+Module names are bare Lean modules under `RolloutProofs/`. Numbering
+follows the QCE 2026 paper (*Coherent Rollout Oracles for
+Finite-Horizon Sequential Decision Problems*), Appendix A; the map
+below mirrors that appendix.
 
-| Result                                                 | Lean module                                        |
-| ------------------------------------------------------ | -------------------------------------------------- |
-| Rank-select unconditional gate lower bound             | `RankSelectCircuit`                                |
-| Rank-select per-cut communication lower bound          | `RankSelectCommunication`                          |
-| Rank-select crossing-bit lower bound                   | `RankSelectCommunication`                          |
-| Rank-select sequential-scan upper bound (O(Nw))        | `RankSelectUpperBound`                             |
-| Rank-select tightness corollary                        | `RankSelectUpperBound`, `RankSelectGateLowerBound` |
-| Rank-select universality (compute-select-uncompute)    | `RankSelectUniversality`                           |
-| Rollout oracle cost formula                            | `OracleCostProof`                                  |
-| Classical Omega(k/eps^2) rollout lower bound           | `RolloutLowerBound`                                |
-| Bounded-influence lifting theorem                      | `GeneralizedLifting`                               |
-| Spatial-decay sufficient condition                     | `SpatialDecay`                                     |
-| Quantum O~(sqrt(k)/eps) upper bound (external axioms)  | `QuantumUpperBound`                                |
+| Paper result                                                   | Lean module                                        |
+| -------------------------------------------------------------- | -------------------------------------------------- |
+| Prop. 1: unconditional Omega(N) gate lower bound              | `RankSelectCommunication`                          |
+| Lem. 2: rank-select cut lower bound                           | `RankSelectCommunication`                          |
+| Lem. 3: crossing-gate lower bound                             | `RankSelectCommunication`, `RankSelectCircuit`     |
+| Cor. 4: scan tracks prefix rank at every cut                  | `RankSelectCommunication`, `RankSelectUniversality` |
+| Thm. 5: sequential-scan upper bound, O(Nw)                    | `RankSelectUpperBound`                             |
+| Thm. 6: bounded-span optimality, Theta(Nw)                    | `RankSelectUpperBound`, `RankSelectGateLowerBound`, `RankSelectCommunication` |
+| Thm. 7: blocked construction, O(N log w)                      | `RankSelectBlocked`                                |
+| Thm. 8: polynomial-size coherent rollout oracle               | `OracleCostProof`                                  |
+| Prop. 9: classical Omega(k/eps^2) lower bound                 | `RolloutLowerBound`                                |
+| Thm. 10: bounded-influence lifting                            | `GeneralizedLifting`                               |
+| Thm. 11: per-configuration lower-bound transfer               | `TemplateBridge` (modular, beta = 0), `ApproximateBridge` (0 < beta < eps) |
+| Cor. 12: quantum O~(sqrt(k)/eps) upper bound (external axioms) | `QuantumUpperBound`                                |
+| Thm. 13: subcritical influence decay (App. B)                 | `SpatialDecay`                                     |
 
 `QuantumUpperBound` is modulo three external axioms:
 `iqae_query_complexity` (Grinko et al.),
@@ -48,6 +53,7 @@ RolloutProofs/
 ├── lean-toolchain           pinned toolchain
 ├── RolloutProofs.lean       top-level entry point
 └── RolloutProofs/
+    ├── RankSelectBlocked.lean
     ├── RankSelectCircuit.lean
     ├── RankSelectCommunication.lean
     ├── RankSelectGateLowerBound.lean
