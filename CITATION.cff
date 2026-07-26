@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it as below. For results from a
+  specific paper, use the citation in that paper's artifact directory
+  (see the Publications table in README.md).
+type: software
+title: b01t
+authors:
+  - family-names: Shukla
+    given-names: Nishant
+repository-code: "https://github.com/BinRoot/b01t"
+license: Apache-2.0
+version: 0.1.0
+date-released: "2026-07-25"

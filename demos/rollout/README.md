@@ -2,6 +2,28 @@
 
 Coherent rollout oracles for sequential decision problems.
 
+## Publication
+
+This directory is the artifact for:
+
+> Nishant Shukla. **Coherent Rollout Oracles for Finite-Horizon
+> Sequential Decision Problems.** IEEE International Conference on
+> Quantum Computing and Engineering (QCE), 2026.
+
+The code behind the paper's tables and proofs is pinned at tag
+[`v0.1.0`](https://github.com/BinRoot/b01t/tree/v0.1.0/demos/rollout).
+
+```bibtex
+@inproceedings{shukla2026rollout,
+  author    = {Shukla, Nishant},
+  title     = {Coherent Rollout Oracles for Finite-Horizon Sequential
+               Decision Problems},
+  booktitle = {IEEE International Conference on Quantum Computing and
+               Engineering (QCE)},
+  year      = {2026}
+}
+```
+
 - `sway/` - two-player stochastic game
 - `epidemic/` - SIR epidemic intervention model
 - `bench.py` - validation and scaling tables for the construction

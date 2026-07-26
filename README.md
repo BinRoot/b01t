@@ -79,3 +79,16 @@ uv run pytest
 - `demos/rollout/` - coherent rollout oracle for sequential decision making (Sway and SIR-epidemic instances), a bench driver that prints validation and scaling tables, and Lean 4 proofs of the construction's theorems under `demos/rollout/RolloutProofs/`.
 - `demos/best_arm/` - end-to-end pipeline: rollout oracle → coherent AE → Dürr–Høyer max-finding.
 - `demos/{shor,grover_search,bernstein_vazirani,deutsch,simon}/` - textbook quantum algorithms.
+
+## Publications
+
+Research built on b01t. Each artifact directory carries the citation
+and reproduction instructions; the tag pins the code behind the
+paper's results.
+
+| Paper | Venue | Artifact | Tag |
+| --- | --- | --- | --- |
+| Coherent Rollout Oracles for Finite-Horizon Sequential Decision Problems | IEEE QCE 2026 | [`demos/rollout/`](demos/rollout/) | [`v0.1.0`](https://github.com/BinRoot/b01t/tree/v0.1.0) |
+
+To cite the library itself, use `CITATION.cff` (the "Cite this
+repository" button on GitHub).
